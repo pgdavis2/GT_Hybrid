@@ -1,1 +1,80 @@
-This is HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solar Energy Data Visualization</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <style>
+    #map {
+      height: 400px;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Solar Energy Data Visualization</h1>
+  <div id="map"></div>
+  <canvas id="lineChart"></canvas>
+
+  <script>
+    // Initialize Leaflet map
+    const map = L.map('map').setView([0, 0], 2); // Default initial view
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    // Load solar data from JSON file
+    fetch('https://github.com/pgdavis2/GT_Hybrid/blob/master/solarData.json')
+      .then(response => response.json())
+      .then(solarData => {
+        // Update map location and marker
+        map.setView([solarData.latitude, solarData.longitude], 8);
+        L.marker([solarData.latitude, solarData.longitude]).addTo(map)
+          .bindPopup(solarData.location)
+          .openPopup();
+
+        // Extract hourly energy data
+        const hourlyEnergyData = solarData.data.map(day => ({
+          date: day.date,
+          hourlyEnergy: day.hourly_energy,
+        }));
+
+        // Extract hours (for X-axis labels)
+        const hours = Array.from({ length: 24 }, (_, i) => i);
+
+        // Create line chart
+        const lineChart = new Chart(document.getElementById('lineChart').getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: hours,
+            datasets: [{
+              label: 'Hourly Solar Energy',
+              data: hourlyEnergyData[0].hourlyEnergy,
+              borderColor: 'blue',
+              backgroundColor: 'rgba(0, 0, 255, 0.2)',
+            }],
+          },
+          options: {
+            scales: {
+              x: {
+                title: {
+                  display: true,
+                  text: 'Hour',
+                },
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: 'Solar Energy (MW)',
+                },
+              },
+            },
+          },
+        });
+      })
+      .catch(error => console.error('Error loading solar data:', error));
+  </script>
+</body>
+</html>
